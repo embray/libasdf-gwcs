@@ -1,10 +1,25 @@
 if HAVE_AST
 SUBDIRS = ast
 
+# Automake would otherwise put ast in DIST_SUBDIRS unconditionally, and `make
+# dist' would recurse into a build directory that a --without-ast build never
+# created.
+DIST_SUBDIRS = ast
+
 # AST is LGPL-3.0-or-later and is statically linked into libasdf-gwcs, so its
 # license text must accompany any binary distribution (LGPLv3 section 4b).
 ast_licensedir = $(docdir)
 ast_license_DATA = ast/COPYING
+else
+
+# With AST disabled its sources are not distributed at all, so the tarball
+# could not build the evaluation backend even where AST is available.  Refuse
+# rather than ship one that quietly cannot.
+dist-hook:
+	@echo "make dist: this tree was configured with --without-ast, so the" >&2
+	@echo "tarball would omit the vendored AST sources entirely." >&2
+	@echo "Configure with AST enabled to build a distribution." >&2
+	@exit 1
 endif
 
 # AST is a build-only dependency; don't recurse into its test suite

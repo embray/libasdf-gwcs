@@ -152,8 +152,10 @@ EXTRA_DIST = \
     scripts/create_roman_fixture.py \
     scripts/extract_doc_examples.py
 
-# Clean up extracted doc examples
+# Clean up extracted doc examples, and the per-run temp directories the test
+# binaries create (their .pgid-* coordination files outlive the run by design,
+# so nothing else removes them).
 distclean-local:
-	rm -rf $(builddir)/doc_examples
+	rm -rf $(builddir)/doc_examples $(builddir)/tmp
 
 check-local: $(munit_submodule)

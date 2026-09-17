@@ -79,7 +79,7 @@ foreach(source_file ${source_files})
         PROPERTY ENVIRONMENT_MODIFICATION "${runtime}")
 endforeach()
 
-if(ASDF_GWCS_ENABLE_AST)
+if(ASDF_GWCS_WITH_AST)
     target_compile_definitions(test-gwcs-eval PRIVATE HAVE_AST)
     target_include_directories(test-gwcs-eval PRIVATE ${AST_INCLUDE_DIR})
     target_link_libraries(test-gwcs-eval PRIVATE ${AST_LIBRARY})

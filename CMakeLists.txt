@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 
 # Internal full package version
-set(PACKAGE_VERSION 0.1.0)
+set(PACKAGE_VERSION 0.1.0b0)
 
 # CMake-compatible project version
 set(PROJECT_VERSION 0.1.0)
@@ -56,7 +56,7 @@ configure_file(${CMAKE_SOURCE_DIR}/config.h.cmake
     ${CMAKE_BINARY_DIR}/include/config.h @ONLY)
 include_directories(${CMAKE_BINARY_DIR}/include)
 
-if(ASDF_GWCS_ENABLE_AST)
+if(ASDF_GWCS_WITH_AST)
     find_package(PkgConfig REQUIRED)
     # AST's YamlChan is what the ast_yaml backend drives, so both build
     # systems configure it against libfyaml (the autotools build passes

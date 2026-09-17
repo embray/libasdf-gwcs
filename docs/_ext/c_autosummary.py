@@ -39,6 +39,7 @@ The clang invocation is taken from hawkmoth's own ``hawkmoth_clang`` and
 ``hawkmoth_clang_c``.
 """
 
+import inspect
 import re
 from pathlib import Path
 
@@ -80,6 +81,20 @@ Cached for the life of the process rather than on the build environment: the
 environment is pickled between runs, so an index stored there would outlive
 edits to the headers and silently serve stale summaries.
 """
+
+
+def _extract_summary(body, document):
+    """
+    Call autosummary's ``extract_summary``, which took the document node
+    before Sphinx 8.2 and its settings after.
+    """
+    from sphinx.ext.autosummary import extract_summary
+
+    params = list(inspect.signature(extract_summary).parameters)
+    takes_document = len(params) > 1 and params[1] == 'document'
+
+    return extract_summary(body, document if takes_document
+                           else document.settings)
 
 
 def _docstring_body(lines):
@@ -162,8 +177,6 @@ class CAutosummary(SphinxDirective):
     """
 
     def run(self):
-        from sphinx.ext.autosummary import extract_summary
-
         index, sources = _build_index(self.env.config)
 
         # Without this Sphinx does not know the page is derived from the
@@ -205,7 +218,7 @@ class CAutosummary(SphinxDirective):
                 role, summary = 'expr', ''
             else:
                 role, body = found
-                summary = extract_summary(body, self.state.document.settings)
+                summary = _extract_summary(body, self.state.document)
 
             title = f'{display} <{target}>' if display else target
             lines += [f'   * - :c:{role}:`{title}`', f'     - {summary}']

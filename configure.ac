@@ -1,12 +1,14 @@
 AC_PREREQ([2.69])
 AC_INIT(
-  [libasdf-gwcs], [0.1.0],
+  [libasdf-gwcs], [0.1.0b0],
   [https://github.com/asdf-format/libasdf-gwcs/issues],
   [],
   [https://github.com/asdf-format/libasdf-gwcs],
 )
 AC_CONFIG_AUX_DIR([build-aux])
-AM_INIT_AUTOMAKE([foreign subdir-objects])
+dnl tar-ustar: some of the vendored AST's fixture paths are too long for
+dnl automake's default v7 tar format, which drops them from the tarball.
+AM_INIT_AUTOMAKE([foreign subdir-objects tar-ustar])
 AC_USE_SYSTEM_EXTENSIONS
 
 LT_INIT([disable-static])
@@ -80,13 +82,17 @@ AS_IF([test "x$enable_logging" = "xyes"],
 AX_SUBMODULE_INIT([third_party/STC], [third_party/STC/include/stc/common.h])
 AX_SUBMODULE_INIT([tests/munit], [tests/munit/munit.h])
 
-# --enable-ast (default: yes)
-# Uses vendored submodule at third_party/ast; falls back to system libast.
-AC_ARG_ENABLE([ast],
-  [AS_HELP_STRING([--enable-ast],
-    [Enable AST evaluation backend (default: yes)])],
-  [enable_ast=$enableval],
-  [enable_ast=yes]
+# --with-ast (default: auto)
+# Uses the vendored copy at third_party/ast; falls back to a system libast.
+#
+#   --with-ast     require it; fail if it cannot be configured
+#   --without-ast  build without it; AST is not looked for at all
+#   (unspecified)  use it if possible, warn if not
+AC_ARG_WITH([ast],
+  [AS_HELP_STRING([--with-ast],
+    [AST evaluation backend (default: auto)])],
+  [],
+  [with_ast=auto]
 )
 
 dnl Dependencies 1
@@ -108,32 +114,43 @@ AST_CFLAGS=
 AST_LIBS=
 ASDF_GWCS_BACKENDS=
 
-AS_IF([test "x$enable_ast" = "xyes"], [
-  dnl Try vendored submodule first; fall back to system libast
-  have_ast_submodule=no
-  AS_IF([test -e "$srcdir/third_party/ast/.git"],
-    [have_ast_submodule=yes],
-    [AS_IF([test -d "$srcdir/.git"],
-      [AC_MSG_NOTICE([Initializing third_party/ast submodule...])
-       AS_IF([(cd "$srcdir" && git submodule update --init third_party/ast)],
-         [have_ast_submodule=yes],
-         [AC_MSG_WARN([Failed to initialize third_party/ast submodule])])])])
+dnl A file belonging to AST's own sources, so it is present both in an
+dnl initialized submodule and in a release tarball.  AST's configure is
+dnl generated and so is absent from the former; bootstrap.local is not
+dnl distributed and so is absent from the latter.
+ast_sentinel=third_party/ast/Makefile.am
 
-  AS_IF([test "x$have_ast_submodule" = "xyes"], [
-    dnl Bootstrap AST's autotools if configure hasn't been generated yet
+AS_IF([test "x$with_ast" != "xno"], [
+  dnl Absent AST sources in a git checkout only mean the submodule has not
+  dnl been initialized yet
+  AS_IF([test ! -f "$srcdir/$ast_sentinel" && test -d "$srcdir/.git"],
+    [AC_MSG_NOTICE([Initializing third_party/ast submodule...])
+     AS_IF([(cd "$srcdir" && git submodule update --init third_party/ast)],
+       [],
+       [AC_MSG_WARN([Failed to initialize third_party/ast submodule])])])
+
+  dnl Now: is there a vendored AST to build?
+  AC_MSG_CHECKING([for vendored AST])
+  AS_IF([test -f "$srcdir/$ast_sentinel"],
+    [have_vendored_ast=yes], [have_vendored_ast=no])
+  AC_MSG_RESULT([$have_vendored_ast])
+
+  AS_IF([test "x$have_vendored_ast" = "xyes"], [
+    dnl Bootstrap AST's autotools if configure hasn't been generated yet, as
+    dnl in a fresh submodule checkout.  A release tarball ships it already.
     AS_IF([test ! -f "$srcdir/third_party/ast/configure"],
-      [AC_MSG_NOTICE([Bootstrapping AST submodule...])
+      [AC_MSG_NOTICE([Bootstrapping AST...])
        AS_IF([(cd "$srcdir/third_party/ast" && ./bootstrap.local)],
          [],
          [AC_MSG_ERROR([Failed to bootstrap AST submodule])])])
     dnl Build vendored AST as a PIC static library so it can be embedded in
     dnl our shared library.
     dnl
-    dnl AST's configure uses AC_CHECK_LIB to find libyaml, which only searches
-    dnl standard system paths.  On macOS (Homebrew) or other non-standard
-    dnl installs libyaml may live outside those paths.  Pass it
-    dnl CPPFLAGS/LDFLAGS with our pkg-config findings so AST's configure sees
-    dnl it.
+    dnl Our fork of AST supports using libfyaml as the preferred YAML backend
+    dnl so that is passed in as well (to avoid an additional dependency on
+    dnl libyaml as opposed to libfyaml). Include any already found
+    dnl FYAML_CFLAGS/FYAML_LIBS which can also be used by AST's configure to
+    dnl locate the appropriate libfyaml paths.
     dnl AST is absorbed into libasdf-gwcs.so, so build it with hidden
     dnl visibility: otherwise its ~2500 symbols are re-exported from our shared
     dnl library and would collide with any program that links its own libast.
@@ -164,20 +181,28 @@ AS_IF([test "x$enable_ast" = "xyes"], [
     AST_LIBS="$AST_LIBS $_ast_dir/libast_err.la"
     HAVE_AST=yes
   ], [
-    dnl Vendored not available; try system libast
+    dnl No vendored copy; try a system libast.  These report only what is
+    dnl missing; whether that is fatal is decided once, below, by --with-ast.
     AC_CHECK_LIB([ast], [astBegin],
       [AC_CHECK_HEADER([ast.h],
         [dnl libyaml is still required for YamlChan
-         PKG_CHECK_MODULES([YAML], [yaml-0.1], [],
-           [AC_MSG_ERROR([libyaml (yaml-0.1) is required for the AST backend but was not found])])
-         AST_LIBS="-last"
-         HAVE_AST=yes],
-        [AC_MSG_WARN([ast.h not found; AST backend disabled])]
+         PKG_CHECK_MODULES([YAML], [yaml-0.1],
+           [AST_LIBS="-last"
+            HAVE_AST=yes],
+           [AC_MSG_WARN([libyaml (yaml-0.1) not found; system libast unusable])])],
+        [AC_MSG_WARN([ast.h not found; system libast unusable])]
       )],
-      [AC_MSG_WARN([libast not found and vendored submodule unavailable; AST backend disabled])]
+      [AC_MSG_WARN([no system libast found])]
     )
   ])
 ])
+
+dnl One decision point for the whole search above: required, optional, or off.
+AS_IF([test "x$HAVE_AST" != "xyes"],
+  [AS_IF([test "x$with_ast" = "xyes"],
+     [AC_MSG_ERROR([--with-ast was given, but the AST evaluation backend could not be configured (see the warnings above)])],
+     [test "x$with_ast" = "xauto"],
+     [AC_MSG_WARN([AST evaluation backend unavailable; building without it.  Reading and writing GWCS objects still works, but they cannot be evaluated.])])])
 
 AS_IF([test "x$HAVE_AST" = "xyes"],
   [AC_DEFINE([HAVE_AST], [1], [Define if AST evaluation backend is available])

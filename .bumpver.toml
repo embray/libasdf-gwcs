@@ -1,0 +1,30 @@
+[bumpver]
+current_version = "0.1.0b0"
+version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
+commit_message = "bump version {old_version} -> {new_version}"
+tag_message = "{new_version}"
+tag_scope = "default"
+pre_commit_hook = "scripts/changelog.sh"
+post_commit_hook = ""
+commit = true
+tag = true
+push = true
+
+[bumpver.file_patterns]
+"configure.ac" = [
+    '\[libasdf-gwcs\], \[{version}\]'
+]
+"CMakeLists.txt" = [
+    'set(PACKAGE_VERSION {version})',
+    'set(PROJECT_VERSION MAJOR.MINOR.PATCH)'
+]
+"docs/conf.py" = [
+    "release = '{version}'"
+]
+"towncrier.toml" = [
+    'version = "{version}"'
+]
+".bumpver.toml" = [
+    'current_version = "{version}"',
+]
+

@@ -31,6 +31,7 @@ dependencies:
   - jinja2=3.1.6=pyhd8ed1ab_0
   - kernel-headers_linux-64=5.14.0=he073ed8_2
   - ld_impl_linux-64=2.44=ha97dd6f_2
+  - libasdf=0.2.0=h42c67a9_0
   - libclang=14.0.0=default_h2e3cab8_0
   - libclang-cpp14=14.0.0=default_h2e3cab8_0
   - libclang13=14.0.0=default_h3a83d3e_0

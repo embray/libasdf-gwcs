@@ -19,6 +19,9 @@ jobs:
   build-and-test:
     name: Build and run `make check`
     runs-on: ${{ matrix.os }}
+    # Where libasdf is installed below
+    env:
+      PKG_CONFIG_PATH: /usr/local/lib/pkgconfig
     strategy:
       fail-fast: false
       matrix:
@@ -92,12 +95,11 @@ jobs:
 
       - name: Configure
         run: |
-          CONFIGURE_FLAGS=""
+          CONFIGURE_FLAGS="--with-ast"
           if [ "${{ matrix.asan }}" = "yes" ]; then
-            CONFIGURE_FLAGS="--with-asan"
+            CONFIGURE_FLAGS="$CONFIGURE_FLAGS --with-asan"
           fi
-          PKG_CONFIG_PATH=/tmp/libasdf-inst/lib/pkgconfig \
-            ./configure CC=${{ matrix.cc }} $CONFIGURE_FLAGS
+          ./configure CC=${{ matrix.cc }} $CONFIGURE_FLAGS
 
       # If make fails re-run with V=1 so we can inspect
       - name: Build
@@ -112,3 +114,79 @@ jobs:
         if: failure()
         run: |
           tail -n +1 tests/*.log
+
+      - name: Dist
+        run: make dist ${{ github.event.inputs.make_flags }}
+
+      - name: Dist check
+        run: |
+          make distcheck ${{ github.event.inputs.make_flags }}
+
+      # Only on tags, and only from one job in the matrix: release.yml picks
+      # this up and attaches it to the GitHub release for the tag.
+      - name: Upload source tarball
+        if: github.ref_type == 'tag' && matrix.dist_artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-tarball
+          path: libasdf-gwcs-*.tar.gz
+          if-no-files-found: error
+          retention-days: 14
+
+  # Test the documentation build if the build passes
+  docs:
+    name: 'Build documentation'
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          submodules: true
+
+      - name: Install documentation dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            autoconf \
+            automake \
+            libtool \
+            build-essential \
+            libclang-dev \
+            libfyaml-dev \
+            libbz2-dev \
+            liblz4-dev \
+            zlib1g-dev \
+            libstatgrab-dev \
+            llvm \
+            python3-sphinx \
+            python3-clang
+          pip install furo hawkmoth towncrier
+
+      - name: Build and install libasdf
+        run: |
+          git clone --depth=1 https://github.com/asdf-format/libasdf.git /tmp/libasdf-src
+          cd /tmp/libasdf-src
+          ./autogen.sh
+          ./configure --prefix=/usr/local CC=${{ matrix.cc }}
+          make
+          sudo make install
+
+      - name: Set LD_LIBRARY_PATH
+        run: echo "LD_LIBRARY_PATH=$(llvm-config --libdir):$LD_LIBRARY_PATH" >> $GITHUB_ENV
+
+      - name: Bootstrap autotools
+        run: ./autogen.sh
+
+      - name: Configure
+        run: |
+          ./configure --enable-docs
+
+      # Run towncrier to build the changelog--since this gets included into
+      # docs it's important to check that the changelog entries don't
+      # introduce any doc build failures.
+      - name: Extract changelog
+        run: scripts/changelog.sh
+
+      - name: Build Sphinx documentation
+        run: make docs SPHINX_FLAGS=-W

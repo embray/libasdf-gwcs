@@ -34,7 +34,8 @@ CMAKE_DIST = CMakeLists.txt
 # Local Sphinx extensions; see docs/_ext/
 SPHINX_EXT_DIST = \
     _ext/c_autosummary.py \
-    _ext/index_grouping.py
+    _ext/index_grouping.py \
+    _ext/schema_roles.py
 
 EXTRA_DIST = \
     $(CMAKE_DIST) \

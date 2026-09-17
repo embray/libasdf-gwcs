@@ -116,7 +116,7 @@ Useful ``configure`` options:
 ``--with-asan``
     Build with AddressSanitizer.
 
-``--disable-ast``
+``--without-ast``
     Build without the AST evaluation backend.  Reading and writing GWCS
     objects still works; only evaluation becomes unavailable.  Also removes
     libasdf-gwcs's only LGPL-licensed dependency--see :ref:`licensing`.
@@ -158,9 +158,9 @@ Building with CMake
 
 Options of note:
 
-``-D ASDF_GWCS_ENABLE_AST=[ON/OFF]``
+``-D ASDF_GWCS_WITH_AST=[ON/OFF]``
     Build the AST evaluation backend (default ``ON``); the counterpart of
-    ``--disable-ast``.
+    ``--without-ast``.
 
 ``-D ENABLE_ASAN=[YES/NO]``
     Build with AddressSanitizer.
@@ -224,7 +224,7 @@ your debugger of choice).
 build21 fixture over a grid and compares the results against reference values
 produced by AST and by Python's GWCS, asserting sub-milliarcsecond agreement.
 It reports itself as *skipped* rather than failing when the ``ast_yaml``
-backend is unavailable, so a ``--disable-ast`` build still runs cleanly.
+backend is unavailable, so a ``--without-ast`` build still runs cleanly.
 
 
 .. _documentation examples:

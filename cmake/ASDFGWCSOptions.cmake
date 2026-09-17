@@ -1,6 +1,6 @@
 include(AddressAnalyzer)
 
-option(ASDF_GWCS_ENABLE_AST "Enable AST evaluation backend" ON)
+option(ASDF_GWCS_WITH_AST "Enable AST evaluation backend" ON)
 
 # Documentation
 option(ENABLE_DOCS "Build the Sphinx documentation" OFF)

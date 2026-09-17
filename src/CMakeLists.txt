@@ -74,7 +74,7 @@ set_target_properties(libasdf-gwcs PROPERTIES
     OUTPUT_NAME "asdf-gwcs"
 )
 
-if(ASDF_GWCS_ENABLE_AST)
+if(ASDF_GWCS_WITH_AST)
     target_sources(libasdf_gwcs_objs PRIVATE backends/ast_yaml.c)
     target_compile_definitions(libasdf_gwcs_objs PRIVATE HAVE_AST)
     target_include_directories(libasdf_gwcs_objs PRIVATE ${AST_INCLUDE_DIR})

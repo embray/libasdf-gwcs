@@ -529,8 +529,8 @@ under ``third_party/ast``.  There are a few things to know about it:
 AST support can be disabled entirely:
 
 ============  ===========================================
-Autotools     ``./configure --disable-ast``
-CMake         ``cmake .. -DASDF_GWCS_ENABLE_AST=OFF``
+Autotools     ``./configure --without-ast``
+CMake         ``cmake .. -DASDF_GWCS_WITH_AST=OFF``
 ============  ===========================================
 
 Without it, libasdf-gwcs still reads and writes GWCS objects exactly as before;
@@ -637,7 +637,7 @@ embed libasdf-gwcs, with AST statically linked, into a **proprietary**
 application: they take on §4a–§4d with respect to the AST portion.
 
 Anyone who would rather avoid the question entirely can build with
-``--disable-ast`` / ``-DASDF_GWCS_ENABLE_AST=OFF``, which yields a purely
+``--without-ast`` / ``-DASDF_GWCS_WITH_AST=OFF``, which yields a purely
 BSD-licensed library without evaluation support.
 
 Note also that AST itself bundles further components under their own terms,
