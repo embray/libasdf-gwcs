@@ -153,7 +153,7 @@ jobs:
           cat release-notes.md
 
       - name: Download the source tarball
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: dist-tarball
           path: dist

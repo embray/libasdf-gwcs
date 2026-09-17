@@ -79,6 +79,9 @@ jobs:
 
     - name: Setup ccache action
       uses: Chocobo1/setup-ccache-action@v1.5.1
+      with:
+        remove_stale_cache: false
+        update_packager_index: false
 
     - name: Build and install libasdf (Linux)
       if: startsWith(matrix.os, 'ubuntu')

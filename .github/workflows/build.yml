@@ -32,6 +32,9 @@ jobs:
           - os: ubuntu-latest
             cc: gcc
             asan: no
+            # The one job whose `make dist` tarball is kept as an artifact
+            # (for release.yml to attach to the GitHub release)
+            dist_artifact: true
           - os: ubuntu-latest
             cc: gcc
             asan: yes
@@ -80,6 +83,9 @@ jobs:
 
       - name: Setup ccache action
         uses: Chocobo1/setup-ccache-action@v1.5.1
+        with:
+          remove_stale_cache: false
+          update_packager_index: false
 
       - name: Build and install libasdf
         run: |
@@ -126,7 +132,7 @@ jobs:
       # this up and attaches it to the GitHub release for the tag.
       - name: Upload source tarball
         if: github.ref_type == 'tag' && matrix.dist_artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dist-tarball
           path: libasdf-gwcs-*.tar.gz
