@@ -60,17 +60,22 @@ def extract_first_section(rst_text: str) -> str:
     it's actually the (1-indexed) line of the the section marker
     (e.g. =========).
 
-    It would be signifcantly nicer if docutils could just dump the text of the
+    It would be significantly nicer if docutils could just dump the text of the
     section node directly but it doesn't seem to preserve that, so iterating
     through the sections and doing line number math seems to be the best way.
     """
 
-    doc = docutils.core.publish_doctree(rst_text)
+    # doctitle_xform promotes a lone top-level section to the document title,
+    # which happens when the changelog holds only one release.
+    doc = docutils.core.publish_doctree(
+        rst_text, settings_overrides={'doctitle_xform': False})
     sections = [node for node in doc.children if isinstance(node, docutils.nodes.section)]
     assert sections, 'no top-level sections in the file'
     lines = rst_text.splitlines()
     first_section_line = sections[0].line - 2
-    assert first_section_line == 0  # Should always be the 0-th line
+    # Should always be the 0-th line
+    assert first_section_line == 0, \
+        f'the first line should be the start of the first section (got {first_section_line})'
 
     if len(sections) > 1:
         next_section_line = sections[1].line - 2
