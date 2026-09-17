@@ -1,3 +1,0 @@
-Reorganized the library sources to mirror the layout of the GWCS and
-``astropy`` transform schema namespaces, so that a given tag's implementation
-is where its schema name suggests it should be.

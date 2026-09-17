@@ -1,6 +1,0 @@
-Reworked how transform types implement copying and destruction: each
-transform now implements only its own type-specific ``copy`` and ``deinit``
-steps, and the transform registration machinery installs shims that handle
-the base transform fields.  This removes the boilerplate previously required
-of every transform, and makes it easier to add new ones, including from
-third-party plugins.

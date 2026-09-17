@@ -1,4 +1,0 @@
-Gave transform serialization and deserialization the same treatment as
-``copy`` and ``deinit``: individual transforms are now only responsible for
-their own properties, with the base transform properties handled once,
-by the base transform's (de)serialization methods.

@@ -1,6 +1,6 @@
 AC_PREREQ([2.69])
 AC_INIT(
-  [libasdf-gwcs], [0.1.0b0],
+  [libasdf-gwcs], [0.1.0rc0],
   [https://github.com/asdf-format/libasdf-gwcs/issues],
   [],
   [https://github.com/asdf-format/libasdf-gwcs],

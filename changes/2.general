@@ -1,3 +1,0 @@
-Initial version, extracted from ``libasdf``, where the GWCS extension
-previously lived as an optional feature. It is now a separate extension
-library.

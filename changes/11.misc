@@ -1,3 +1,0 @@
-Added a performance benchmark harness under ``utils/perf/``, comparing
-libasdf-gwcs plus AST against Python's ``gwcs`` on the Roman build21
-calibration files, together with the recorded results and plots.
